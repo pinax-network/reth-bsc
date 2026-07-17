@@ -156,7 +156,10 @@ where
         BlockEnv = crate::evm::block_env::BscBlockEnv,
     >,
     Spec: EthereumHardforks + crate::hardforks::BscHardforks + EthChainSpec + Hardforks + Clone + 'static,
-    R: ReceiptBuilder<Transaction = TransactionSigned, Receipt: TxReceipt>,
+    R: ReceiptBuilder<
+        Transaction = TransactionSigned,
+        Receipt: TxReceipt<Log = alloy_primitives::Log>,
+    >,
     <R as ReceiptBuilder>::Transaction: Unpin + From<TransactionSigned>,
     <EVM as alloy_evm::Evm>::Tx: FromTxWithEncoded<<R as ReceiptBuilder>::Transaction>,
     BscTxEnv: IntoTxEnv<<EVM as alloy_evm::Evm>::Tx>,
