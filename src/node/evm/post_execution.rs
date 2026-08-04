@@ -337,6 +337,29 @@ where
                 for tx in self.system_txs.iter() {
                     warn!("left system tx: {:?}", tx);
                 }
+                // Diagnostic for fee-accumulation divergences (e.g. mainnet block 106696194):
+                // dump every executed transaction's gas so the diverging tx can be identified by
+                // diffing against the canonical receipts. Cumulative gas differences reconstruct
+                // per-tx gasUsed.
+                {
+                    let mut prev = 0u64;
+                    let gas_list: Vec<String> = self
+                        .receipts
+                        .iter()
+                        .enumerate()
+                        .map(|(i, r)| {
+                            let cum = alloy_consensus::TxReceipt::cumulative_gas_used(r);
+                            let gas = cum.saturating_sub(prev);
+                            prev = cum;
+                            format!("{i}:{gas}")
+                        })
+                        .collect();
+                    warn!(
+                        target: "bsc::executor::diagnostic",
+                        "per-tx gas at system-tx mismatch: [{}]",
+                        gas_list.join(",")
+                    );
+                }
                 self.executor_metrics.system_contract_errors_total.increment(1);
                 return Err(BscBlockExecutionError::Validation(
                     BscBlockValidationError::UnexpectedSystemTx
