@@ -223,6 +223,9 @@ fn main() -> eyre::Result<()> {
                 to.is_some_and(|to| reth_bsc::is_invoke_system_contract(&to))
         },
         trace_finish_in_system_call: false,
+        // BSC headers carry Some(0) base fee post-London; geth Firehose reports it as absent,
+        // which also makes dynamic-fee tx gas_price report the fee cap like geth.
+        treat_zero_base_fee_as_absent: true,
     });
 
     // Initialize bid package queue at startup
