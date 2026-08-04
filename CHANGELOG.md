@@ -7,6 +7,23 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## v0.1.1-fh-beta-10
+
+### Changed
+
+- Rebased onto upstream `v0.1.1` (`457f81a`): Pasteur mainnet activation scheduled
+  (2026-08-25), upstream network/blocks-by-range improvements, and the new
+  `bnb-chain/reth` pin (`c13b0986`) which streams finalization-appended (system-tx)
+  receipts to the engine receipt-root task. The Firehose fork of the reth crates moved to
+  `streamingfast/bnb-reth` branch `firehose/0.1.x-bsc` accordingly, with the same
+  finalization-receipt streaming mirrored in the Firehose-traced engine execution path.
+- Carries the beta-8 hard funding gate (replay funding never active under the Firehose
+  inspector) and the beta-9 fast RocksDB `TransactionHashNumbers` healing.
+
+Note: the block 106696194 pipeline divergence (deposit system tx short by one tx fee) is
+NOT known to be fixed by this rebase — it reproduces with tracing disabled and is being
+reported upstream.
+
 ## v0.1.0-fh-beta-7
 
 ### Added
