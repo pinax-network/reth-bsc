@@ -7,6 +7,16 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## v0.1.1-fh-beta-12
+
+### Fixed
+
+- Restored two beta-4/6 fixes dropped during the v0.1.1 rebase: the EIP-2935
+  history-storage system call is captured again (`transact_system_call` routes through the
+  inspector when tracing), and the canonical block size again excludes blob sidecars.
+  (beta-10/11 traces were missing `system_calls` entirely and misreported `size` on blob
+  blocks.)
+
 ## v0.1.1-fh-beta-10
 
 ### Changed
