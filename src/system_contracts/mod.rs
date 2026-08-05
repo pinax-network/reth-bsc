@@ -766,6 +766,8 @@ where
     } else if spec.chain().eq(&Chain::from_id(RIALTO_CHAIN_ID)) &&
         spec.genesis_hash() == bsc_qanet().genesis_header.hash()
     {
+        // This fix was done to allow running a reth-bsc devnet on the StreamingFast
+        // battlefield suite.
         // Chain id alone is not enough: custom dev networks may reuse 714. geth keys
         // upgrades on the genesis hash and applies none for unknown networks, so only
         // the real Rialto genesis gets the QA-net contracts.
