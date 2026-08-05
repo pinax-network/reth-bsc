@@ -764,7 +764,12 @@ where
         } else {
             Ok(HashMap::new())
         }
-    } else if spec.chain().eq(&Chain::from_id(RIALTO_CHAIN_ID)) {
+    } else if spec.chain().eq(&Chain::from_id(RIALTO_CHAIN_ID)) &&
+        spec.genesis_hash() == bsc_qanet().genesis_header.hash()
+    {
+        // Chain id alone is not enough: custom dev networks may reuse 714. geth keys
+        // upgrades on the genesis hash and applies none for unknown networks, so only
+        // the real Rialto genesis gets the QA-net contracts.
         if let Some(m) = BSC_QANET_CONTRACTS.get(hardfork) {
             Ok(m.clone())
         } else {
