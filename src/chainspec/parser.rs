@@ -83,6 +83,8 @@ pub fn parse_genesis_json(json_str: &str) -> eyre::Result<Arc<BscChainSpec>> {
     
     let mut chain_spec = chain_spec.build();
 
+    // This fix was done to allow running a reth-bsc devnet on the StreamingFast battlefield
+    // suite.
     // BSC genesis headers never carry post-merge header fields, even when the corresponding
     // forks are active at the genesis timestamp (dev genesis files activate
     // Shanghai/Cancun/Prague at time 0). reth's fork-aware genesis builder would populate
