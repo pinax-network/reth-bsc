@@ -7,6 +7,18 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Fixed
+
+- Include the SELFDESTRUCT refund when resolving an account's post-transaction balance
+  (`streamingfast/bnb-reth` port of `streamingfast/reth` `v2.3.0-fh-7`). On the truly-destroyed
+  path (EIP-6780: contract created in the same transaction, or pre-Cancun) revm credits the
+  beneficiary in place and records the move only inside its `AccountDestroyed` journal entry — no
+  `BalanceTransfer` is pushed — so the journal walk backing the `RewardTransactionFee` and
+  `GasRefund` events missed it. A coinbase or sender that received a suicide refund then reported
+  an `old_balance` contradicting the `SuicideRefund` event emitted moments earlier.
+
 ## v0.1.1-fh-beta-12
 
 ### Fixed
