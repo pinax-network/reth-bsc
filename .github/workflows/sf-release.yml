@@ -18,6 +18,11 @@
 # heavy to reliably build on GitHub-hosted arm64 runners, so we do not produce a
 # multi-arch manifest. Re-introduce a matrix + manifest-merge job here if arm64
 # becomes worthwhile.
+#
+# Tag naming: `<upstream tag>-fh<proto>-<n>` for releases built on an upstream tag;
+# `dev-<upstream sha>-fh<proto>-<n>` for builds on an upstream branch commit. `dev-`
+# tags build with the same `maxperf` profile but are published as prereleases and
+# never move the `latest` image tag.
 name: Build, push and release (if tag)
 
 on:
@@ -101,7 +106,7 @@ jobs:
             type=sha,prefix=,suffix=-${{ steps.extract-version.outputs.VERSION }}
             type=edge
           flavor: |
-            latest=${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc') && !contains(github.ref, 'alpha') }}
+            latest=${{ startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/dev-') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc') && !contains(github.ref, 'alpha') }}
 
       - name: Build and push Docker image (linux/amd64)
         uses: docker/build-push-action@v6
@@ -175,6 +180,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body: ${{ steps.changelog.outputs.changelog }}
-          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') || contains(github.ref, 'alpha') }}
+          prerelease: ${{ startsWith(github.ref, 'refs/tags/dev-') || contains(github.ref, 'beta') || contains(github.ref, 'rc') || contains(github.ref, 'alpha') }}
           files: |
             ./reth-bsc_linux_amd64

@@ -9,6 +9,26 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## dev-049d306-fh3.1-1
+
+Firehose build of upstream `develop` commit `049d3065` ("fix: refine new-payload/fcu flow to
+avoid memory accumulation", bnb-chain/reth-bsc #501; upstream `v0.1.2` + 15 commits). First
+release cut from an upstream commit rather than an upstream tag, using the
+`release/<upstream>-fh` branch model: the StreamingFast Firehose series as of `v0.1.1-fh3.1`
+replayed onto `049d3065`.
+
+### Changed
+
+- `reth-*` crates come from `pinax-network/bnb-reth` branch `firehose/develop`: bnb-chain/reth
+  `bf76323c` (what `049d3065`'s lockfile resolves `branch = "develop"` to) plus StreamingFast's
+  17 Firehose hook commits from `bnb-v0.1.1-fh3.1`. Public repository, no token needed.
+- Two glue conflicts resolved against upstream changes since `v0.1.1`: the Pasteur contract
+  upgrade path now both reports the code change to the state hook (upstream's bsc-qanet root
+  fix) and emits the Firehose `on_code_change` event; internal consensus `eth_call`s use
+  upstream's `view_call_tx_env()` helper with Firehose tracing suspended around them.
+- `dev-*` tags are published as prereleases and never move the `latest` image tag.
+- The `v0.1.1-fh3.1-1` clippy fix is not needed here: upstream already rewrote that code.
+
 ## v0.1.1-fh3.1-1
 
 First release built from the Pinax fork (`Johnaverse/reth-bsc` for testing, then
