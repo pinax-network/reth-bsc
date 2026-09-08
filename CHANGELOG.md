@@ -11,23 +11,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## v0.1.1-fh3.1-1
 
-First release built from `pinax-network/reth-bsc`. Same sources as StreamingFast's
-`v0.1.1-fh3.1` (`56c35604c`); the only change is where the Firehose dependencies are fetched
-from, so that releases no longer depend on any `streamingfast/*` repository:
+First release built from the Pinax fork (`Johnaverse/reth-bsc` for testing, then
+`pinax-network/reth-bsc`). Sources are identical to StreamingFast's `v0.1.1-fh3.1`
+(`56c35604c`): same `Cargo.toml`, same `Cargo.lock`, so `--locked` resolves exactly the bytes
+StreamingFast shipped. Dependencies still come from `streamingfast/reth` (tag
+`bnb-v0.1.1-fh3.1`) and `streamingfast/evm` (`sf/v0.34.0`).
 
 ### Changed
 
-- `reth-*` crates (including `reth-firehose`) now come from `pinax-network/reth` tag
-  `bnb-v0.1.1-fh3.1`, a mirror of `streamingfast/reth` `release/bnb-0.x` at the identical
-  commit (`d0e869a06`).
-- The `alloy-evm` `[patch.crates-io]` now points at `pinax-network/evm` branch `sf/v0.34.0`, a
-  mirror of `streamingfast/evm` at the identical commit (`49b4c64c3`). It carries the
-  4-commit "enable system call to be traced by inspector" change on top of alloy-rs/evm
-  `v0.34.0`.
-- Docker build and CI authenticate git for the private `pinax-network/reth` fork via the
-  `PAT_INTERNAL_REPOSITORIES` secret. `Cargo.lock` is byte-identical apart from the source
-  URLs (same commit hashes), so `--locked` builds still resolve exactly what StreamingFast
-  shipped.
+- Release pipeline runs in this repository: images publish to `ghcr.io/<owner>/reth-bsc`
+  and the `reth-bsc_linux_amd64` asset attaches to the GitHub release here.
+- Docker build and CI can authenticate git for dependencies pinned to the private
+  `pinax-network` org (secret `PAT_INTERNAL_REPOSITORIES`, applied to `pinax-network/*` URLs
+  only). Byte-identical mirrors of the two StreamingFast dependencies exist at
+  `pinax-network/reth` (`release/bnb-0.x`, tag `bnb-v0.1.1-fh3.1`) and `pinax-network/evm`
+  (`sf/v0.34.0`) for the day the pins move off `streamingfast/*`.
 
 ## v0.1.1-fh
 

@@ -28,7 +28,8 @@ LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 # Install system dependencies
 RUN apt-get update && apt-get -y upgrade && apt-get install -y libclang-dev pkg-config
 
-# The reth-* crates come from the private pinax-network/reth fork. Fetch git
+# Git dependencies may live in the private pinax-network org (e.g. a pinax-network/reth
+# fork). Fetch git
 # dependencies with the git CLI so the `github_token` build secret (mounted in
 # the cook/build steps below via an `insteadOf` rewrite) is honoured; cargo's
 # built-in fetcher has no way to receive it.
@@ -65,7 +66,7 @@ ARG VERSION="dev"
 RUN --mount=type=secret,id=github_token,required=false \
     set -eu; \
     if [ -s /run/secrets/github_token ]; then \
-        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/".insteadOf "https://github.com/"; \
+        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"; \
     fi; \
     cargo chef cook --profile $BUILD_PROFILE --features "$FEATURES" --recipe-path recipe.json; \
     rm -f /root/.gitconfig
@@ -75,7 +76,7 @@ COPY --exclude=dist . .
 RUN --mount=type=secret,id=github_token,required=false \
     set -eu; \
     if [ -s /run/secrets/github_token ]; then \
-        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/".insteadOf "https://github.com/"; \
+        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"; \
     fi; \
     cargo build --bin reth-bsc --profile $BUILD_PROFILE --features "$FEATURES" --locked; \
     rm -f /root/.gitconfig

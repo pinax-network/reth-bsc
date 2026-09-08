@@ -17,10 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # reth-* crates come from the private pinax-network/reth fork; cargo
-      # fetches with the git CLI so this URL rewrite carries the read token.
+      # Git dependencies pinned to the private pinax-network org (if any) need a
+      # read token; the rewrite is scoped to that prefix so public fetches stay
+      # anonymous. Unused when nothing is pinned there.
       - name: Configure git credentials for private crates
-        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1
@@ -36,10 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # reth-* crates come from the private pinax-network/reth fork; cargo
-      # fetches with the git CLI so this URL rewrite carries the read token.
+      # Git dependencies pinned to the private pinax-network org (if any) need a
+      # read token; the rewrite is scoped to that prefix so public fetches stay
+      # anonymous. Unused when nothing is pinned there.
       - name: Configure git credentials for private crates
-        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1
@@ -56,10 +58,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # reth-* crates come from the private pinax-network/reth fork; cargo
-      # fetches with the git CLI so this URL rewrite carries the read token.
+      # Git dependencies pinned to the private pinax-network org (if any) need a
+      # read token; the rewrite is scoped to that prefix so public fetches stay
+      # anonymous. Unused when nothing is pinned there.
       - name: Configure git credentials for private crates
-        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1
@@ -77,10 +80,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # reth-* crates come from the private pinax-network/reth fork; cargo
-      # fetches with the git CLI so this URL rewrite carries the read token.
+      # Git dependencies pinned to the private pinax-network org (if any) need a
+      # read token; the rewrite is scoped to that prefix so public fetches stay
+      # anonymous. Unused when nothing is pinned there.
       - name: Configure git credentials for private crates
-        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1
