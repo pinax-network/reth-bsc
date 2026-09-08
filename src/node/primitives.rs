@@ -745,6 +745,8 @@ mod tests {
             block_hash: B256::repeat_byte(0x11),
             tx_index: 0,
             tx_hash: B256::repeat_byte(0x22),
+            // Legacy EIP-4844 proofs; `version` is rlp:"-" and does not affect the size under test.
+            version: 0,
         };
         let body = BscBlockBody {
             inner: BlockBody {
