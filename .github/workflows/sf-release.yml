@@ -2,11 +2,11 @@
 #
 # Inherited from the StreamingFast fork and maintained by Pinax here;
 # intentionally kept separate from upstream CI so that upstream merges stay
-# clean. The reth-* crates are fetched from the private pinax-network/reth
-# fork, so the Docker build receives the `PAT_INTERNAL_REPOSITORIES` org secret
-# as the `github_token` build secret (see Dockerfile.sf). External PRs have no
-# secrets and therefore cannot resolve those crates; they fail at dependency
-# fetch, which is the expected outcome for untrusted code.
+# clean. If a git dependency is pinned to the private pinax-network org (for
+# example a pinax-network/reth fork), the Docker build receives the
+# `PAT_INTERNAL_REPOSITORIES` secret as the `github_token` build secret and
+# Dockerfile.sf applies it to pinax-network/* URLs only; public dependencies are
+# always fetched anonymously. With no such pin the secret is unused.
 #
 # Triggers: `firehose/*` branch pushes, `*-fh*` tags, pull requests and manual
 # dispatch. Pull requests opened from a fork get a read-only GITHUB_TOKEN, so the
