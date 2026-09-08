@@ -1,11 +1,31 @@
 # Changelog
 
-All notable changes to the StreamingFast Firehose fork of bnb-chain/reth-bsc are documented here.
+All notable changes to the Pinax-maintained Firehose fork of bnb-chain/reth-bsc are documented
+here. Entries up to `v0.1.1-fh` were written by StreamingFast in `streamingfast/reth-bsc`, from
+which this fork was seeded.
 
 This changelog covers Firehose-specific changes only. For upstream changes, see the
 [bnb-chain/reth-bsc repository](https://github.com/bnb-chain/reth-bsc).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+## v0.1.1-fh3.1-1
+
+First release built from the Pinax fork (`Johnaverse/reth-bsc` for testing, then
+`pinax-network/reth-bsc`). Sources are identical to StreamingFast's `v0.1.1-fh3.1`
+(`56c35604c`): same `Cargo.toml`, same `Cargo.lock`, so `--locked` resolves exactly the bytes
+StreamingFast shipped. Dependencies still come from `streamingfast/reth` (tag
+`bnb-v0.1.1-fh3.1`) and `streamingfast/evm` (`sf/v0.34.0`).
+
+### Changed
+
+- Release pipeline runs in this repository: images publish to `ghcr.io/<owner>/reth-bsc`
+  and the `reth-bsc_linux_amd64` asset attaches to the GitHub release here.
+- Docker build and CI can authenticate git for dependencies pinned to the private
+  `pinax-network` org (secret `PAT_INTERNAL_REPOSITORIES`, applied to `pinax-network/*` URLs
+  only). Byte-identical mirrors of the two StreamingFast dependencies exist at
+  `pinax-network/reth` (`release/bnb-0.x`, tag `bnb-v0.1.1-fh3.1`) and `pinax-network/evm`
+  (`sf/v0.34.0`) for the day the pins move off `streamingfast/*`.
 
 ## v0.1.1-fh
 

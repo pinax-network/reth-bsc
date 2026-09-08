@@ -1,9 +1,10 @@
 # syntax=docker.io/docker/dockerfile:1.7-labs
 #
-# StreamingFast variant of reth-bsc's `Dockerfile`.
+# Firehose variant of reth-bsc's `Dockerfile` (inherited from the StreamingFast
+# fork, maintained by Pinax in this repository).
 #
-# Maintained by StreamingFast and intentionally kept separate from upstream's
-# `Dockerfile` so that upstream merges stay clean. It builds the
+# Intentionally kept separate from upstream's `Dockerfile` so that upstream
+# merges stay clean. It builds the
 # Firehose-instrumented `reth-bsc` binary (Firehose tracing is compiled into the
 # default binary in this fork) and installs it at a stable path
 # (`/usr/local/bin/reth-bsc`) that the `sf-release.yml` workflow can `docker cp`
@@ -21,11 +22,18 @@ ARG FIREHOSE_ETHEREUM="latest"
 FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
 WORKDIR /app
 
-LABEL org.opencontainers.image.source=https://github.com/streamingfast/reth-bsc
+LABEL org.opencontainers.image.source=https://github.com/pinax-network/reth-bsc
 LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 
 # Install system dependencies
 RUN apt-get update && apt-get -y upgrade && apt-get install -y libclang-dev pkg-config
+
+# Git dependencies may live in the private pinax-network org (e.g. a pinax-network/reth
+# fork). Fetch git
+# dependencies with the git CLI so the `github_token` build secret (mounted in
+# the cook/build steps below via an `insteadOf` rewrite) is honoured; cargo's
+# built-in fetcher has no way to receive it.
+ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 
 # Builds a cargo-chef plan
 FROM chef AS planner
@@ -52,12 +60,26 @@ ENV FEATURES=$FEATURES
 # image label on the runtime stage below.
 ARG VERSION="dev"
 
-# Builds dependencies
-RUN cargo chef cook --profile $BUILD_PROFILE --features "$FEATURES" --recipe-path recipe.json
+# Builds dependencies. The `github_token` secret is optional: a build with
+# public mirrors (or a warm cargo git cache) works without it, and nothing is
+# written to the image layer because the credential lives in /run/secrets.
+RUN --mount=type=secret,id=github_token,required=false \
+    set -eu; \
+    if [ -s /run/secrets/github_token ]; then \
+        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"; \
+    fi; \
+    cargo chef cook --profile $BUILD_PROFILE --features "$FEATURES" --recipe-path recipe.json; \
+    rm -f /root/.gitconfig
 
 # Build application
 COPY --exclude=dist . .
-RUN cargo build --bin reth-bsc --profile $BUILD_PROFILE --features "$FEATURES" --locked
+RUN --mount=type=secret,id=github_token,required=false \
+    set -eu; \
+    if [ -s /run/secrets/github_token ]; then \
+        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"; \
+    fi; \
+    cargo build --bin reth-bsc --profile $BUILD_PROFILE --features "$FEATURES" --locked; \
+    rm -f /root/.gitconfig
 
 # ARG is not resolved in COPY so we copy the binary to a fixed location.
 RUN cp /app/target/$BUILD_PROFILE/reth-bsc /app/reth-bsc-bin
