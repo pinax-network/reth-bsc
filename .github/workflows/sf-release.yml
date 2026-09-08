@@ -123,8 +123,9 @@ jobs:
           # buildx, so branch/PR (release) and tag (maxperf) caches stay separate.
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Read access to the private pinax-network/reth fork for cargo's git
-          # fetch inside the build (mounted, never baked into a layer).
+          # Optional read token for git dependencies pinned to the private
+          # pinax-network org (see header and Dockerfile.sf); unused when none
+          # are. Mounted as a BuildKit secret, never baked into a layer.
           secrets: |
             github_token=${{ secrets.PAT_INTERNAL_REPOSITORIES }}
           build-args: |

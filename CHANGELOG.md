@@ -19,9 +19,10 @@ replayed onto `049d3065`.
 
 ### Changed
 
-- `reth-*` crates come from `pinax-network/bnb-reth` branch `firehose/develop`: bnb-chain/reth
-  `bf76323c` (what `049d3065`'s lockfile resolves `branch = "develop"` to) plus StreamingFast's
-  17 Firehose hook commits from `bnb-v0.1.1-fh3.1`. Public repository, no token needed.
+- `reth-*` crates come from `pinax-network/bnb-reth` tag `bnb-bf76323c-fh3.1-1` (branch
+  `firehose/develop`): bnb-chain/reth `bf76323c` (what `049d3065`'s lockfile resolves
+  `branch = "develop"` to) plus StreamingFast's 17 Firehose hook commits from `bnb-v0.1.1-fh3.1`
+  and a regenerated lockfile. Public repository, no token needed.
 - Two glue conflicts resolved against upstream changes since `v0.1.1`: the Pasteur contract
   upgrade path now both reports the code change to the state hook (upstream's bsc-qanet root
   fix) and emits the Firehose `on_code_change` event; internal consensus `eth_call`s use
@@ -31,11 +32,16 @@ replayed onto `049d3065`.
 
 ## v0.1.1-fh3.1-1
 
-First release built from the Pinax fork (`Johnaverse/reth-bsc` for testing, then
-`pinax-network/reth-bsc`). Sources are identical to StreamingFast's `v0.1.1-fh3.1`
-(`56c35604c`): same `Cargo.toml`, same `Cargo.lock`, so `--locked` resolves exactly the bytes
-StreamingFast shipped. Dependencies still come from `streamingfast/reth` (tag
-`bnb-v0.1.1-fh3.1`) and `streamingfast/evm` (`sf/v0.34.0`).
+First release built from `pinax-network/reth-bsc`. `Cargo.toml` and `Cargo.lock` are identical
+to StreamingFast's `v0.1.1-fh3.1` (`56c35604c`), so `--locked` resolves exactly the dependency
+bytes StreamingFast shipped: `streamingfast/reth` tag `bnb-v0.1.1-fh3.1` and `streamingfast/evm`
+`sf/v0.34.0`. One source file differs (see Fixed).
+
+### Fixed
+
+- `read_all_system_contracts` initialises `dir` at its declaration (clippy 1.98
+  `needless_late_init`, which `ci.yml` runs with `-D warnings` on unpinned stable). Same behaviour;
+  the identical failure shows on `streamingfast/reth-bsc` `release/0.1.x`.
 
 ### Changed
 
