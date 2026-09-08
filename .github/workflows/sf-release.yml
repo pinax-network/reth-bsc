@@ -1,7 +1,12 @@
-# StreamingFast Docker image build, push and (on tag) release.
+# Firehose Docker image build, push and (on tag) release.
 #
-# Maintained by StreamingFast and intentionally kept separate from upstream CI
-# so that upstream merges stay clean.
+# Inherited from the StreamingFast fork and maintained by Pinax here;
+# intentionally kept separate from upstream CI so that upstream merges stay
+# clean. The reth-* crates are fetched from the private pinax-network/reth
+# fork, so the Docker build receives the `PAT_INTERNAL_REPOSITORIES` org secret
+# as the `github_token` build secret (see Dockerfile.sf). External PRs have no
+# secrets and therefore cannot resolve those crates; they fail at dependency
+# fetch, which is the expected outcome for untrusted code.
 #
 # Triggers: `firehose/*` branch pushes, `*-fh*` tags, pull requests and manual
 # dispatch. Pull requests opened from a fork get a read-only GITHUB_TOKEN, so the
@@ -113,6 +118,10 @@ jobs:
           # buildx, so branch/PR (release) and tag (maxperf) caches stay separate.
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Read access to the private pinax-network/reth fork for cargo's git
+          # fetch inside the build (mounted, never baked into a layer).
+          secrets: |
+            github_token=${{ secrets.PAT_INTERNAL_REPOSITORIES }}
           build-args: |
             VERSION=${{ steps.extract-version.outputs.VERSION }}
             FIREHOSE_ETHEREUM=${{ inputs.firehose_ethereum || 'latest' }}

@@ -1,5 +1,8 @@
 name: Continuous Integration
 
+env:
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+
 on:
   push:
     branches:
@@ -14,6 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # reth-* crates come from the private pinax-network/reth fork; cargo
+      # fetches with the git CLI so this URL rewrite carries the read token.
+      - name: Configure git credentials for private crates
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1
@@ -29,6 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # reth-* crates come from the private pinax-network/reth fork; cargo
+      # fetches with the git CLI so this URL rewrite carries the read token.
+      - name: Configure git credentials for private crates
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1
@@ -45,6 +56,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      # reth-* crates come from the private pinax-network/reth fork; cargo
+      # fetches with the git CLI so this URL rewrite carries the read token.
+      - name: Configure git credentials for private crates
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1
@@ -62,6 +77,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # reth-* crates come from the private pinax-network/reth fork; cargo
+      # fetches with the git CLI so this URL rewrite carries the read token.
+      - name: Configure git credentials for private crates
+        run: git config --global url."https://x-access-token:${{ secrets.PAT_INTERNAL_REPOSITORIES }}@github.com/".insteadOf "https://github.com/"
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y liburing-dev pkg-config libclang-dev
       - uses: actions-rs/toolchain@v1

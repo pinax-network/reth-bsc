@@ -1,11 +1,33 @@
 # Changelog
 
-All notable changes to the StreamingFast Firehose fork of bnb-chain/reth-bsc are documented here.
+All notable changes to the Pinax-maintained Firehose fork of bnb-chain/reth-bsc are documented
+here. Entries up to `v0.1.1-fh` were written by StreamingFast in `streamingfast/reth-bsc`, from
+which this fork was seeded.
 
 This changelog covers Firehose-specific changes only. For upstream changes, see the
 [bnb-chain/reth-bsc repository](https://github.com/bnb-chain/reth-bsc).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+## v0.1.1-fh3.1-1
+
+First release built from `pinax-network/reth-bsc`. Same sources as StreamingFast's
+`v0.1.1-fh3.1` (`56c35604c`); the only change is where the Firehose dependencies are fetched
+from, so that releases no longer depend on any `streamingfast/*` repository:
+
+### Changed
+
+- `reth-*` crates (including `reth-firehose`) now come from `pinax-network/reth` tag
+  `bnb-v0.1.1-fh3.1`, a mirror of `streamingfast/reth` `release/bnb-0.x` at the identical
+  commit (`d0e869a06`).
+- The `alloy-evm` `[patch.crates-io]` now points at `pinax-network/evm` branch `sf/v0.34.0`, a
+  mirror of `streamingfast/evm` at the identical commit (`49b4c64c3`). It carries the
+  4-commit "enable system call to be traced by inspector" change on top of alloy-rs/evm
+  `v0.34.0`.
+- Docker build and CI authenticate git for the private `pinax-network/reth` fork via the
+  `PAT_INTERNAL_REPOSITORIES` secret. `Cargo.lock` is byte-identical apart from the source
+  URLs (same commit hashes), so `--locked` builds still resolve exactly what StreamingFast
+  shipped.
 
 ## v0.1.1-fh
 
