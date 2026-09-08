@@ -9,6 +9,22 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## dev-049d306-fh3.1-2
+
+### Fixed
+
+- Firehose finality is now derived per block from the block's own Parlia attestation
+  (`snapshot(hash).vote_data`, the same rule as `parlia_getFinalizedNumber`) instead of this
+  node's canonical finalized head, via the new `finalized_for_block` hook in
+  `pinax-network/bnb-reth` tag `bnb-bf76323c-fh3.1-2`. The canonical head is node state (vote
+  arrival timing) and is not necessarily an ancestor of a side-chain block being traced; on BSC
+  fast finality this made readers stamp different LIBs on identical blocks (the merger then filed
+  ~50k duplicate one-blocks as "forked"), let LIB step backwards within one reader, and stamped
+  fork-branch block 120653743 (`e3d67571`) with the canonical finalized number 120653740, so a
+  downstream forkdb marked the fork's 120653740 (`2c97928d`) final (2026-09-08 08:24 UTC).
+  Blocks without an attestation are emitted with no finalized ref (fireeth falls back to
+  `block - 200`), never with node state.
+
 ## dev-049d306-fh3.1-1
 
 Firehose build of upstream `develop` commit `049d3065` ("fix: refine new-payload/fcu flow to
