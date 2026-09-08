@@ -81,7 +81,26 @@ pub fn parse_genesis_json(json_str: &str) -> eyre::Result<Arc<BscChainSpec>> {
         chain_spec = chain_spec.with_fork(BscHardfork::Bohr, ForkCondition::Block(0));
     }
     
-    let chain_spec = chain_spec.build();
+    let mut chain_spec = chain_spec.build();
+
+    // This fix was done to allow running a reth-bsc devnet on the StreamingFast battlefield
+    // suite.
+    // BSC genesis headers never carry post-merge header fields, even when the corresponding
+    // forks are active at the genesis timestamp (dev genesis files activate
+    // Shanghai/Cancun/Prague at time 0). reth's fork-aware genesis builder would populate
+    // withdrawals/blob/requests fields, yielding a genesis hash that mismatches geth-bsc and
+    // breaking the P2P status handshake. Strip them and re-seal, mirroring geth's behavior.
+    {
+        let mut header = chain_spec.genesis_header().clone();
+        header.withdrawals_root = None;
+        header.blob_gas_used = None;
+        header.excess_blob_gas = None;
+        header.parent_beacon_block_root = None;
+        header.requests_hash = None;
+        let hash = alloy_primitives::Sealable::hash_slow(&header);
+        chain_spec.genesis_header = reth_primitives_traits::SealedHeader::new(header, hash);
+    }
+
     Ok(Arc::new(BscChainSpec { inner: chain_spec }))
 }
 

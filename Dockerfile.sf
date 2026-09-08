@@ -1,0 +1,104 @@
+# syntax=docker.io/docker/dockerfile:1.7-labs
+#
+# Firehose variant of reth-bsc's `Dockerfile` (inherited from the StreamingFast
+# fork, maintained by Pinax in this repository).
+#
+# Intentionally kept separate from upstream's `Dockerfile` so that upstream
+# merges stay clean. It builds the
+# Firehose-instrumented `reth-bsc` binary (Firehose tracing is compiled into the
+# default binary in this fork) and installs it at a stable path
+# (`/usr/local/bin/reth-bsc`) that the `sf-release.yml` workflow can `docker cp`
+# out of the image to attach as a GitHub release asset.
+#
+# The final stage is based on the `firehose-ethereum` image, so the published
+# image bundles both the `fireeth` binary and `reth-bsc`. `fireeth` is the image
+# entrypoint and drives `reth-bsc` as its reader node. The bundled `fireeth`
+# version is selected by the `FIREHOSE_ETHEREUM` build arg (default `latest`).
+
+# Bundled `fireeth` version = the `firehose-ethereum` runtime base image tag.
+# Declared before the first FROM so it is usable in the runtime stage's FROM.
+ARG FIREHOSE_ETHEREUM="latest"
+
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+WORKDIR /app
+
+LABEL org.opencontainers.image.source=https://github.com/pinax-network/reth-bsc
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
+
+# Install system dependencies
+RUN apt-get update && apt-get -y upgrade && apt-get install -y libclang-dev pkg-config
+
+# Git dependencies may live in the private pinax-network org (e.g. a pinax-network/reth
+# fork). Fetch git
+# dependencies with the git CLI so the `github_token` build secret (mounted in
+# the cook/build steps below via an `insteadOf` rewrite) is honoured; cargo's
+# built-in fetcher has no way to receive it.
+ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
+
+# Builds a cargo-chef plan
+FROM chef AS planner
+COPY --exclude=.git --exclude=dist . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+
+# Build profile: `maxperf` (full LTO) for release/tag builds, `release` for
+# faster branch/PR builds. Set by sf-release.yml.
+ARG BUILD_PROFILE=maxperf
+ENV BUILD_PROFILE=$BUILD_PROFILE
+
+# Extra Cargo flags
+ARG RUSTFLAGS=""
+ENV RUSTFLAGS="$RUSTFLAGS"
+
+# Extra Cargo features. Matches the upstream Makefile's release build.
+ARG FEATURES="jemalloc,asm-keccak"
+ENV FEATURES=$FEATURES
+
+# Version of the release being built (e.g. the pushed tag). Stamped as an OCI
+# image label on the runtime stage below.
+ARG VERSION="dev"
+
+# Builds dependencies. The `github_token` secret is optional: a build with
+# public mirrors (or a warm cargo git cache) works without it, and nothing is
+# written to the image layer because the credential lives in /run/secrets.
+RUN --mount=type=secret,id=github_token,required=false \
+    set -eu; \
+    if [ -s /run/secrets/github_token ]; then \
+        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"; \
+    fi; \
+    cargo chef cook --profile $BUILD_PROFILE --features "$FEATURES" --recipe-path recipe.json; \
+    rm -f /root/.gitconfig
+
+# Build application
+COPY --exclude=dist . .
+RUN --mount=type=secret,id=github_token,required=false \
+    set -eu; \
+    if [ -s /run/secrets/github_token ]; then \
+        git config --global url."https://x-access-token:$(cat /run/secrets/github_token)@github.com/pinax-network/".insteadOf "https://github.com/pinax-network/"; \
+    fi; \
+    cargo build --bin reth-bsc --profile $BUILD_PROFILE --features "$FEATURES" --locked; \
+    rm -f /root/.gitconfig
+
+# ARG is not resolved in COPY so we copy the binary to a fixed location.
+RUN cp /app/target/$BUILD_PROFILE/reth-bsc /app/reth-bsc-bin
+
+# Runtime image bundles the Firehose Ethereum stack (`fireeth`, at /app/fireeth)
+# plus the freshly built `reth-bsc`. The base is Ubuntu-based and already ships
+# ca-certificates / libstdc++ / openssl, so no extra packages are installed here.
+FROM ghcr.io/streamingfast/firehose-ethereum:${FIREHOSE_ETHEREUM}
+
+ARG VERSION="dev"
+LABEL org.opencontainers.image.version="${VERSION}"
+
+# Keep reth-bsc at the stable /usr/local/bin path that sf-release.yml `docker cp`s
+# out as a release asset, and symlink it into /app next to the bundled `fireeth`.
+COPY --from=builder /app/reth-bsc-bin /usr/local/bin/reth-bsc
+RUN chmod +x /usr/local/bin/reth-bsc && ln -sf /usr/local/bin/reth-bsc /app/reth-bsc
+COPY LICENSE* /app/
+
+EXPOSE 30303 30303/udp 9001 8545 8546 8551
+
+# No ENTRYPOINT: inherit the firehose-ethereum image's entrypoint (`fireeth`),
+# which launches `reth-bsc` as its reader node.

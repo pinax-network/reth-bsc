@@ -195,13 +195,52 @@ fn main() -> eyre::Result<()> {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
 
+    // Initialize the process-wide Firehose tracer. FIRE lines are emitted on stdout; the
+    // engine-tree live path and the pipeline execution stage pick this up via
+    // reth_firehose::is_tracer_initialized().
+    //
+    // FIREHOSE_DISABLED=true skips initialization entirely: the node then executes through the
+    // plain (untraced) path, byte-identical to un-instrumented reth-bsc. Ops kill-switch and
+    // A/B lever for isolating tracing-induced behavior.
+    let firehose_disabled = std::env::var("FIREHOSE_DISABLED")
+        .map(|v| matches!(v.as_str(), "1" | "true" | "TRUE" | "True"))
+        .unwrap_or(false);
+    if firehose_disabled {
+        eprintln!("FIREHOSE_DISABLED set: Firehose tracing is OFF for this run");
+    } else {
+        reth_firehose::init_tracer(firehose_tracer::config::Config {
+            chain_client: firehose_tracer::config::ChainClient::Reth,
+            ..Default::default()
+        });
+    }
+
+    // BSC-specific tracing behavior (mirrors the geth Firehose reference):
+    // - tx fees (and blob fees) are credited to the consensus SYSTEM_ADDRESS, not the
+    //   block beneficiary; Parlia sweeps them to the validator at finalize time;
+    // - body system transactions are deferred by the block executor and traced by it at
+    //   actual execution time inside finish(), so the generic wrapper must skip them and
+    //   must not wrap finish() in a system-call window.
+    reth_firehose::set_chain_tracing_config(reth_firehose::ChainTracingConfig {
+        fee_recipient: Some(reth_bsc::consensus::SYSTEM_ADDRESS),
+        reward_blob_fee: true,
+        is_deferred_system_tx: |to, max_fee_per_gas, signer, beneficiary| {
+            signer == beneficiary &&
+                max_fee_per_gas == 0 &&
+                to.is_some_and(|to| reth_bsc::is_invoke_system_contract(&to))
+        },
+        trace_finish_in_system_call: false,
+        // BSC headers carry Some(0) base fee post-London; geth Firehose reports it as absent,
+        // which also makes dynamic-fee tx gas_price report the fee cap like geth.
+        treat_zero_base_fee_as_absent: true,
+    });
+
     // Initialize bid package queue at startup
     reth_bsc::shared::init_bid_package_queue();
 
     Cli::<BscChainSpecParser, BscCliArgs>::parse().run_with_components::<BscNode>(
         |spec| {
             (
-                BscEvmConfig::new(spec.clone()),
+                reth_firehose::FirehoseEvmConfig::new(BscEvmConfig::new(spec.clone())),
                 Arc::new(BscConsensus::new(spec))
                     as Arc<dyn FullConsensus<BscPrimitives>>,
             )
@@ -542,6 +581,14 @@ fn main() -> eyre::Result<()> {
                         ctx.modules.merge_if_module_configured(RethRpcModule::Eth, eth_config.into_rpc())?;
                         tracing::info!("Succeed to register eth_config (EIP-7910) API");
                         Ok(())
+                    })
+                    .install_exex("firehose", |ctx| async move {
+                        // Box::pin works around a rustc higher-ranked lifetime limitation when
+                        // proving the (deeply generic) run_exex future Send inside this closure.
+                        Ok(Box::pin(reth_firehose::run_exex(ctx))
+                            as std::pin::Pin<
+                                Box<dyn std::future::Future<Output = eyre::Result<()>> + Send>,
+                            >)
                     })
                     .launch().await?;
 

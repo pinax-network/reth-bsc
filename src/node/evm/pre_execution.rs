@@ -156,7 +156,10 @@ where
         BlockEnv = crate::evm::block_env::BscBlockEnv,
     >,
     Spec: EthereumHardforks + crate::hardforks::BscHardforks + EthChainSpec + Hardforks + Clone + 'static,
-    R: ReceiptBuilder<Transaction = TransactionSigned, Receipt: TxReceipt>,
+    R: ReceiptBuilder<
+        Transaction = TransactionSigned,
+        Receipt: TxReceipt<Log = alloy_primitives::Log>,
+    >,
     <R as ReceiptBuilder>::Transaction: Unpin + From<TransactionSigned>,
     <EVM as alloy_evm::Evm>::Tx: FromTxWithEncoded<<R as ReceiptBuilder>::Transaction>,
     BscTxEnv: IntoTxEnv<<EVM as alloy_evm::Evm>::Tx>,
@@ -309,6 +312,11 @@ where
     ) -> Result<Bytes, BlockExecutionError> {
         let tx_env =
             view_call_tx_env(to, data.clone(), self.evm.block().gas_limit(), self.spec.chain().id());
+
+        // Firehose: this is internal consensus bookkeeping (validator set / turn length reads),
+        // not part of the block's observable execution — geth never traces these. Suspend the
+        // inspector so the read leaves no trace events and cannot trip the tracer state machine.
+        let _fh_suspend = reth_firehose::suspend_tracing();
         let result_and_state = self.evm.transact(tx_env.into_tx_env()).map_err(BlockExecutionError::other)?;
         view_call_output(to, &data, result_and_state.result)
     }
