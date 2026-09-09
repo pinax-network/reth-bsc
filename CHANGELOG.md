@@ -9,6 +9,19 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## dev-049d306-fh3.1-3
+
+### Fixed
+
+- The deterministic Firehose finality introduced in `dev-049d306-fh3.1-2` never engaged: the
+  tracer starts before consensus validates the block's header, which is when the block's own
+  Parlia snapshot is created, so the resolver found no snapshot and every emitted block fell back
+  to LIB `block - 200` (first canary: 33/33 one-blocks). The resolver now reads the **parent's**
+  snapshot (`snapshot(parent_hash).vote_data.source`, provided through the new `parent_hash`
+  argument in `pinax-network/bnb-reth` tag `bnb-bf76323c-fh3.1-3`). Still identical on every
+  node and on the block's own ancestry; the advertised LIB is one block staler (head-3 in steady
+  state). Debug logs under target `bsc::firehose` when it returns `None`.
+
 ## dev-049d306-fh3.1-2
 
 ### Fixed

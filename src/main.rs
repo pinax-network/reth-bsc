@@ -139,21 +139,34 @@ fn user_set_gpo_ignore_price(mut args: impl Iterator<Item = String>) -> bool {
     args.any(|arg| arg == "--gpo.ignoreprice" || arg.starts_with("--gpo.ignoreprice="))
 }
 
-/// Deterministic Firehose finality for a BSC block: the Parlia vote attestation carried by the
-/// block itself. `snapshot(hash).vote_data` is the attestation included in this block's header:
-/// `target` is the block it justifies, `source` the previously justified checkpoint, which
-/// Parlia treats as finalized (`Snapshot::get_finalized_number`, also what
-/// `parlia_getFinalizedNumber` reports). Every node computes the same value for the same block
-/// and it lies on the block's own ancestry, unlike the node's canonical finalized head, which
-/// depends on vote arrival timing and may sit on another branch when a side-chain block is traced.
+/// Deterministic Firehose finality for a BSC block, from the Parlia vote attestation carried by
+/// its **parent**: `snapshot(parent_hash).vote_data` is the attestation included in the parent's
+/// header; its `source` is the checkpoint Parlia treats as finalized
+/// (`Snapshot::get_finalized_number`, the value `parlia_getFinalizedNumber` reports for the
+/// parent). Every node derives the same value for the same block and it lies on the block's own
+/// ancestry, unlike the node's canonical finalized head, which depends on vote arrival timing and
+/// may sit on another branch when a side-chain block is traced.
+///
+/// The parent is used rather than the block itself because the tracer starts before consensus
+/// validates the block's header, which is when its own snapshot is created; the parent's snapshot
+/// is complete by then. This makes the advertised LIB one block staler (head-3 in steady state
+/// instead of head-2), which is the conservative direction.
 ///
 /// Returns `None` (block emitted without a finalized ref; fireeth uses `block - 200`) when the
-/// snapshot is unavailable or carries no attestation (pre-Plato, or the genesis edge).
+/// parent snapshot is unavailable or carries no attestation (pre-Plato, or the genesis edge).
 fn firehose_finalized_for_block(
     number: u64,
-    hash: alloy_primitives::B256,
+    _hash: alloy_primitives::B256,
+    parent_hash: alloy_primitives::B256,
 ) -> Option<(u64, alloy_primitives::B256)> {
-    let snapshot = reth_bsc::shared::get_snapshot_provider()?.snapshot_by_hash(&hash)?;
+    let Some(provider) = reth_bsc::shared::get_snapshot_provider() else {
+        tracing::debug!(target: "bsc::firehose", number, "finality: no snapshot provider");
+        return None;
+    };
+    let Some(snapshot) = provider.snapshot_by_hash(&parent_hash) else {
+        tracing::debug!(target: "bsc::firehose", number, ?parent_hash, "finality: no parent snapshot");
+        return None;
+    };
     let finalized_number = snapshot.get_finalized_number();
     if finalized_number == 0 || finalized_number >= number {
         return None;
@@ -262,8 +275,9 @@ fn main() -> eyre::Result<()> {
         // BSC headers carry Some(0) base fee post-London; geth Firehose reports it as absent,
         // which also makes dynamic-fee tx gas_price report the fee cap like geth.
         treat_zero_base_fee_as_absent: true,
-        // Finality stamped on each emitted block comes from the block's own Parlia attestation,
-        // not from this node's canonical finalized head (see firehose_finalized_for_block).
+        // Finality stamped on each emitted block comes from the Parlia attestation carried by
+        // the block's parent, not from this node's canonical finalized head (see
+        // firehose_finalized_for_block).
         finalized_for_block: Some(firehose_finalized_for_block),
     });
 
