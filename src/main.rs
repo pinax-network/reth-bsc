@@ -629,7 +629,9 @@ fn main() -> eyre::Result<()> {
                         tracing::info!("Succeed to register eth_config (EIP-7910) API");
                         Ok(())
                     })
-                    .install_exex("firehose", |ctx| async move {
+                    // The ExEx requires the tracer's global state. A plain RPC node
+                    // with FIREHOSE_DISABLED must skip both initialization and ExEx.
+                    .install_exex_if(!firehose_disabled, "firehose", |ctx| async move {
                         // Box::pin works around a rustc higher-ranked lifetime limitation when
                         // proving the (deeply generic) run_exex future Send inside this closure.
                         Ok(Box::pin(reth_firehose::run_exex(ctx))

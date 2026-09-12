@@ -9,6 +9,15 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Fixed
+
+- Honor `FIREHOSE_DISABLED` when installing the Firehose execution extension, as
+  well as when initializing the tracer. Previously a plain archive RPC startup
+  could briefly serve requests and then exit because the extension accessed the
+  uninitialized tracer. The normal Firehose-enabled path is unchanged.
+
 ## dev-049d306-fh3.1-3
 
 ### Fixed
