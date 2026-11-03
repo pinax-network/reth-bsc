@@ -4,14 +4,14 @@ Every hardfork reth-bsc defines, its status on the clusters we serve, and what i
 Firehose block. Statuses come from `src/hardforks/bsc.rs` and were cross-checked against
 bnb-chain/bsc `params/config.go` at the same release.
 
-Last checked: 2026-10-16, reth-bsc `v0.1.3` / bsc `v1.8.1`.
+Last checked: 2026-11-03, reth-bsc `v0.1.4` / bsc `v1.8.2`.
 
 ## Jenner (BEP-718)
 
 | Cluster | Status |
 |---|---|
-| mainnet | not scheduled |
-| chapel | timestamp `1793241000` (2026-10-29 02:30:00 UTC) |
+| mainnet | timestamp `1796697000` (2026-12-08 02:30:00 UTC), scheduled |
+| chapel | timestamp `1793241000` (2026-10-29 02:30:00 UTC), active |
 
 | Change | Effect on the Firehose block |
 |---|---|
