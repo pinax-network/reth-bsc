@@ -7,6 +7,16 @@ This changelog covers Firehose-specific changes only. For upstream changes, see 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## v0.1.4-fh3.1
+
+### Changed
+
+- Merged upstream `v0.1.4`, which schedules the mainnet Jenner hardfork (BEP-718) at
+  2026-12-08 02:30:00 UTC (`1796697000`), matching bnb-chain/bsc `v1.8.2`. Mainnet nodes must
+  run this release before then. Jenner's effect on the Firehose block is unchanged from
+  `v0.1.3-fh3.1` and listed in `ACTIVATIONS.md`. The reth pin stays on `streamingfast/reth`
+  `bnb-v0.1.3-fh3.1-2`.
+
 ## v0.1.3-fh3.1-3
 
 ### Fixed
