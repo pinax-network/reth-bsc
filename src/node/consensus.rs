@@ -230,6 +230,13 @@ impl<ChainSpec: EthChainSpec + BscHardforks + 'static> HeaderValidator<Header>
 impl<ChainSpec: EthChainSpec<Header = Header> + BscHardforks + 'static> Consensus<BscBlock>
     for BscConsensus<ChainSpec>
 {
+    /// A header a few milliseconds ahead of the local clock is not invalid: treat it as transient
+    /// so the engine returns ACCEPTED instead of caching it (and its descendants) as invalid.
+    /// Backport of bnb-chain/reth-bsc#615 (reth-bsc#594), without its retry queue.
+    fn is_transient_error(&self, error: &ConsensusError) -> bool {
+        matches!(error, ConsensusError::TimestampIsInFuture { .. })
+    }
+
     /// live-sync validation.
     fn validate_body_against_header(
         &self,
@@ -324,6 +331,17 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::{Arc, RwLock};
     use tokio::sync::mpsc;
+
+    #[test]
+    fn only_future_timestamp_is_transient() {
+        let consensus =
+            BscConsensus::new(Arc::new(BscChainSpec::from(crate::chainspec::bsc::bsc_mainnet())));
+        assert!(consensus.is_transient_error(&ConsensusError::TimestampIsInFuture {
+            timestamp: 101,
+            present_timestamp: 100,
+        }));
+        assert!(!consensus.is_transient_error(&ConsensusError::BaseFeeMissing));
+    }
 
     #[derive(Clone, Default)]
     struct TestProvider;
